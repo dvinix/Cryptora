@@ -1,8 +1,8 @@
 from pydantic_settings import BaseSettings
-from pydantic import field_validator
 from functools import lru_cache
-from typing import List, Union
+from typing import List
 import json
+import os
 
 class Settings(BaseSettings):
     # Database
@@ -14,8 +14,8 @@ class Settings(BaseSettings):
     VERSION: str = "1.0.0"
     DESCRIPTION: str = "End-to-end encrypted notepad with zero-knowledge architecture"
     
-    # Security - Handle both JSON string and comma-separated string
-    ALLOWED_ORIGINS: Union[List[str], str] = ["http://localhost:3000", "http://localhost:5173"]
+    # Security - Handle both JSON string and list
+    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:5173", ""]
     MAX_CONTENT_SIZE: int = 1_000_000  # 1MB
     MAX_ALIAS_LENGTH: int = 100
     MIN_ALIAS_LENGTH: int = 1
@@ -24,24 +24,20 @@ class Settings(BaseSettings):
     RATE_LIMIT_ENABLED: bool = True
     RATE_LIMIT_PER_MINUTE: int = 60
     
-    @field_validator('ALLOWED_ORIGINS', mode='before')
-    @classmethod
-    def parse_allowed_origins(cls, v):
-        if isinstance(v, str):
-            # Try to parse as JSON first
-            v = v.strip()
-            if v.startswith('['):
-                try:
-                    return json.loads(v)
-                except json.JSONDecodeError:
-                    pass
-            # Otherwise treat as comma-separated
-            return [origin.strip() for origin in v.split(',') if origin.strip()]
-        return v
-    
     class Config:
         env_file = ".env"
         case_sensitive = True
+        
+        @classmethod
+        def parse_env_var(cls, field_name: str, raw_val: str):
+            if field_name == 'ALLOWED_ORIGINS':
+                # Handle both JSON array string and comma-separated values
+                if raw_val.startswith('['):
+                    return json.loads(raw_val)
+                else:
+                    # Handle comma-separated string
+                    return [origin.strip() for origin in raw_val.split(',')]
+            return raw_val
 
 @lru_cache()
 def get_settings():
