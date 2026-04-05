@@ -22,7 +22,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(router)
+# Health check endpoint (before router to avoid conflicts)
+@app.get("/health", tags=["Health"])
+async def health_check():
+    return {
+        "status": "healthy",
+        "service": settings.PROJECT_NAME,
+        "version": settings.VERSION
+    }
 
 @app.get("/", tags=["Root"])
 async def root():
@@ -31,13 +38,9 @@ async def root():
         "version": settings.VERSION,
         "description": settings.DESCRIPTION,
         "docs": "/docs",
-        "redoc": "/redoc"
+        "redoc": "/redoc",
+        "health": "/health"
     }
 
-@app.get("/health", tags=["Health"])
-async def health_check():
-    return {
-        "status": "healthy",
-        "service": settings.PROJECT_NAME,
-        "version": settings.VERSION
-    }
+# Include API router with prefix
+app.include_router(router, prefix=settings.API_V1_PREFIX)
