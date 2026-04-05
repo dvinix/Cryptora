@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     DESCRIPTION: str = "End-to-end encrypted notepad with zero-knowledge architecture"
     
     # Security - Handle both JSON string and list
-    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:5173"]
+    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:5173", ""]
     MAX_CONTENT_SIZE: int = 1_000_000  # 1MB
     MAX_ALIAS_LENGTH: int = 100
     MIN_ALIAS_LENGTH: int = 1
