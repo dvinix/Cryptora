@@ -154,11 +154,11 @@ export const NoteViewer = ({ note, folders = [], onUpdate, onDelete }: NoteViewe
         </div>
       </div>
       <div className="flex-1 p-6 overflow-auto bg-background">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-full mx-auto px-4">
           <div className="relative rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm shadow-lg overflow-hidden">
             {/* Notepad lines effect */}
             <div className="absolute inset-0 pointer-events-none opacity-5">
-              {Array.from({ length: 30 }).map((_, i) => (
+              {Array.from({ length: 50 }).map((_, i) => (
                 <div key={i} className="border-b border-white/20" style={{ height: '32px' }} />
               ))}
             </div>
@@ -166,7 +166,7 @@ export const NoteViewer = ({ note, folders = [], onUpdate, onDelete }: NoteViewe
               placeholder="Start writing..."
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              className="min-h-[500px] resize-none text-base bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-white leading-relaxed p-6 relative z-10"
+              className="min-h-[calc(100vh-250px)] resize-none text-base bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-white leading-relaxed p-6 relative z-10"
             />
           </div>
           <div className="mt-6 p-4 bg-primary/5 border border-primary/20 rounded-lg flex items-center gap-2 text-sm text-muted-foreground">
