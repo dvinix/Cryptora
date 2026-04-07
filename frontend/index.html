@@ -4,7 +4,16 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cryptora</title>
+    
+    <!-- Preconnect to backend API -->
+    <link rel="preconnect" href="https://cryptora-backend-9ghj.onrender.com" />
+    <link rel="dns-prefetch" href="https://cryptora-backend-9ghj.onrender.com" />
+    
+    <!-- Preload critical fonts if any -->
+    <link rel="preload" as="style" href="/src/index.css" />
+    
+    <title>Cryptora - Encrypted Notepad</title>
+    <meta name="description" content="End-to-end encrypted notepad with zero-knowledge architecture" />
   </head>
   <body>
     <div id="root"></div>
