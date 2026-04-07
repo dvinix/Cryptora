@@ -25,16 +25,27 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
+# CORS configuration
+origins = [
+    "https://divyanshugarg.me",
+    "https://www.divyanshugarg.me",
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:3000",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,  # Cannot use credentials with wildcard origins
-    allow_methods=["*"],
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Log CORS configuration
-logger.info("🌐 CORS enabled for all origins")
+logger.info(f"🌐 CORS enabled for origins: {origins}")
 
 # Health check endpoint (before router to avoid conflicts)
 @app.get("/health", tags=["Health"])
