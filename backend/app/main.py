@@ -33,6 +33,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Log CORS configuration
+logger.info("🌐 CORS enabled for all origins")
+
 # Health check endpoint (before router to avoid conflicts)
 @app.get("/health", tags=["Health"])
 async def health_check():
