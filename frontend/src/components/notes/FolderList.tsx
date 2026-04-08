@@ -19,6 +19,7 @@ interface FolderListProps {
   onSelectNote: (noteId: number) => void;
   onEditFolder: (folder: DecryptedFolder) => void;
   onDeleteFolder: (folderId: number) => void;
+  onFolderExpand: (folderId: number) => void;
   decryptedTitles: Map<number, string>;
 }
 
@@ -42,6 +43,7 @@ export const FolderList = ({
   onSelectNote,
   onEditFolder,
   onDeleteFolder,
+  onFolderExpand,
   decryptedTitles,
 }: FolderListProps) => {
   const [expandedFolders, setExpandedFolders] = useState<Set<number>>(new Set());
@@ -52,6 +54,8 @@ export const FolderList = ({
       newExpanded.delete(folderId);
     } else {
       newExpanded.add(folderId);
+      // Decrypt folder name when expanded
+      onFolderExpand(folderId);
     }
     setExpandedFolders(newExpanded);
   };
@@ -111,12 +115,16 @@ export const FolderList = ({
               <button
                 onClick={() => {
                   onSelectFolder(folder.id);
-                  if (!isExpanded) toggleFolder(folder.id);
+                  if (!isExpanded) {
+                    toggleFolder(folder.id);
+                  }
                 }}
                 className="flex-1 flex items-center gap-2 text-left"
               >
                 <Folder className={cn('w-4 h-4', colorClass)} />
-                <span className="text-sm font-medium truncate">{folder.decrypted_name}</span>
+                <span className="text-sm font-medium truncate">
+                  {folder.decrypted_name || <span className="text-muted-foreground italic">Loading...</span>}
+                </span>
                 <span className="text-xs text-muted-foreground">{folderNotes.length}</span>
               </button>
 
@@ -152,21 +160,26 @@ export const FolderList = ({
                 {folderNotes.length === 0 ? (
                   <p className="text-xs text-muted-foreground px-3 py-1">No notes</p>
                 ) : (
-                  folderNotes.map((note) => (
-                    <button
-                      key={note.id}
-                      onClick={() => onSelectNote(note.id)}
-                      className={cn(
-                        'w-full px-3 py-1.5 flex items-center gap-2 rounded-md transition-colors text-left text-sm',
-                        selectedNoteId === note.id
-                          ? 'bg-primary/10 text-primary'
-                          : 'hover:bg-accent/50 text-muted-foreground hover:text-foreground'
-                      )}
-                    >
-                      <FileText className="w-3 h-3 flex-shrink-0" />
-                      <span className="truncate">{decryptedTitles.get(note.id) || 'Untitled'}</span>
-                    </button>
-                  ))
+                  folderNotes.map((note) => {
+                    const title = decryptedTitles.get(note.id);
+                    return (
+                      <button
+                        key={note.id}
+                        onClick={() => onSelectNote(note.id)}
+                        className={cn(
+                          'w-full px-3 py-1.5 flex items-center gap-2 rounded-md transition-colors text-left text-sm',
+                          selectedNoteId === note.id
+                            ? 'bg-primary/10 text-primary'
+                            : 'hover:bg-accent/50 text-muted-foreground hover:text-foreground'
+                        )}
+                      >
+                        <FileText className="w-3 h-3 flex-shrink-0" />
+                        <span className="truncate">
+                          {title || <span className="italic">Loading...</span>}
+                        </span>
+                      </button>
+                    );
+                  })
                 )}
               </div>
             )}

@@ -42,33 +42,70 @@ export const DashboardPage = () => {
       const data = await notesApi.getUserWithNotes(user.alias);
       setNotes(data.notes);
       
-      // Decrypt folder names lazily (only when needed)
+      // Don't decrypt folder names on load - will decrypt on demand
       const decryptedFoldersList: DecryptedFolder[] = data.folders.map(folder => ({
         ...folder,
         decrypted_name: '', // Will be decrypted on demand
       }));
       setDecryptedFolders(decryptedFoldersList);
       
-      // Decrypt folder names in background
-      data.folders.forEach(async (folder) => {
-        try {
-          const decrypted = await foldersApi.getFolder(user.alias, folder.id, password);
-          setDecryptedFolders(prev => 
-            prev.map(f => f.id === folder.id ? decrypted : f)
-          );
-        } catch (error) {
-          setDecryptedFolders(prev => 
-            prev.map(f => f.id === folder.id ? { ...f, decrypted_name: 'Unnamed Folder' } : f)
-          );
-        }
-      });
-      
-      // Don't decrypt note titles on load - decrypt on demand when note is selected
+      // Don't decrypt anything on initial load
       setDecryptedTitles(new Map());
     } catch (error) {
       console.error('Failed to load notes', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Decrypt folder name on demand
+  const decryptFolderName = async (folderId: number) => {
+    if (!user || !password) return;
+    
+    const folder = decryptedFolders.find(f => f.id === folderId);
+    if (!folder || folder.decrypted_name) return; // Already decrypted
+    
+    try {
+      const decrypted = await foldersApi.getFolder(user.alias, folderId, password);
+      setDecryptedFolders(prev => 
+        prev.map(f => f.id === folderId ? decrypted : f)
+      );
+    } catch (error) {
+      setDecryptedFolders(prev => 
+        prev.map(f => f.id === folderId ? { ...f, decrypted_name: 'Unnamed Folder' } : f)
+      );
+    }
+  };
+
+  // Decrypt note titles for a specific folder
+  const decryptNoteTitlesInFolder = async (folderId: number | null) => {
+    if (!user || !password) return;
+    
+    const folderNotes = folderId === null 
+      ? notes 
+      : notes.filter(note => note.folder_id === folderId);
+    
+    for (const note of folderNotes) {
+      if (!decryptedTitles.has(note.id)) {
+        try {
+          const decrypted = await notesApi.getNote(user.alias, note.id, password);
+          setDecryptedTitles(prev => new Map(prev).set(note.id, decrypted.decrypted_title || 'Untitled'));
+        } catch (error) {
+          setDecryptedTitles(prev => new Map(prev).set(note.id, 'Untitled'));
+        }
+      }
+    }
+  };
+
+  // Handle folder selection - decrypt folder name and note titles
+  const handleSelectFolder = async (folderId: number | null) => {
+    setSelectedFolderId(folderId);
+    
+    if (folderId !== null) {
+      // Decrypt folder name if not already decrypted
+      await decryptFolderName(folderId);
+      // Decrypt note titles in this folder
+      await decryptNoteTitlesInFolder(folderId);
     }
   };
 
@@ -85,39 +122,6 @@ export const DashboardPage = () => {
       console.error('Failed to load note', error);
     }
   };
-
-  // Decrypt note title on demand
-  const getDecryptedTitle = async (noteId: number): Promise<string> => {
-    if (!user || !password) return 'Untitled';
-    
-    // Check cache first
-    if (decryptedTitles.has(noteId)) {
-      return decryptedTitles.get(noteId)!;
-    }
-    
-    // Decrypt and cache
-    try {
-      const note = await notesApi.getNote(user.alias, noteId, password);
-      const title = note.decrypted_title || 'Untitled';
-      setDecryptedTitles(prev => new Map(prev).set(noteId, title));
-      return title;
-    } catch (error) {
-      return 'Untitled';
-    }
-  };
-
-  // Preload visible note titles
-  useEffect(() => {
-    if (!user || !password || notes.length === 0) return;
-    
-    // Decrypt first 10 note titles for better UX
-    const visibleNotes = notes.slice(0, 10);
-    visibleNotes.forEach(note => {
-      if (!decryptedTitles.has(note.id)) {
-        getDecryptedTitle(note.id);
-      }
-    });
-  }, [notes, user, password]);
 
   const handleCreateNote = async (title: string, content: string) => {
     if (!user || !password) return;
@@ -285,10 +289,11 @@ export const DashboardPage = () => {
             notes={notes}
             selectedFolderId={selectedFolderId}
             selectedNoteId={selectedNote?.id}
-            onSelectFolder={setSelectedFolderId}
+            onSelectFolder={handleSelectFolder}
             onSelectNote={handleSelectNote}
             onEditFolder={handleEditFolder}
             onDeleteFolder={handleDeleteFolder}
+            onFolderExpand={decryptFolderName}
             decryptedTitles={decryptedTitles}
           />
         </ScrollArea>
