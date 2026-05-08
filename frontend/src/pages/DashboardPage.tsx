@@ -1,32 +1,30 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { notesApi, foldersApi } from '@/lib/api';
+import { notesApi, setAuthToken } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Plus, LogOut, FileText, FolderPlus } from 'lucide-react';
-import { FolderList } from '@/components/notes/FolderList';
-import { FolderDialog } from '@/components/notes/FolderDialog';
+import { Plus, LogOut, FileText, Trash2 } from 'lucide-react';
 import { NoteEditor } from '@/components/notes/NoteEditor';
 import { NoteViewer } from '@/components/notes/NoteViewer';
 import { useToast } from '@/components/ui/use-toast';
-import type { Note, DecryptedNote, DecryptedFolder } from '@/lib/types';
+import type { Note, DecryptedNote } from '@/lib/types';
 
 export const DashboardPage = () => {
-  const { user, password, logout, isAuthenticated } = useAuth();
+  const { user, password, token, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [notes, setNotes] = useState<Note[]>([]);
-  const [decryptedFolders, setDecryptedFolders] = useState<DecryptedFolder[]>([]);
-  const [decryptedTitles, setDecryptedTitles] = useState<Map<number, string>>(new Map());
   const [selectedNote, setSelectedNote] = useState<DecryptedNote | null>(null);
-  const [selectedFolderId, setSelectedFolderId] = useState<number | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [loading, setLoading] = useState(true);
-  
-  // Folder dialog state
-  const [folderDialogOpen, setFolderDialogOpen] = useState(false);
-  const [editingFolder, setEditingFolder] = useState<DecryptedFolder | null>(null);
+
+  // Set auth token when user logs in or component mounts
+  useEffect(() => {
+    if (token) {
+      setAuthToken(token);
+    }
+  }, [token]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -41,71 +39,15 @@ export const DashboardPage = () => {
     try {
       const data = await notesApi.getUserWithNotes(user.alias, password);
       setNotes(data.notes);
-      
-      // Don't decrypt folder names on load - will decrypt on demand
-      const decryptedFoldersList: DecryptedFolder[] = data.folders.map(folder => ({
-        ...folder,
-        decrypted_name: '', // Will be decrypted on demand
-      }));
-      setDecryptedFolders(decryptedFoldersList);
-      
-      // Don't decrypt anything on initial load
-      setDecryptedTitles(new Map());
     } catch (error) {
       console.error('Failed to load notes', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load notes',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Decrypt folder name on demand
-  const decryptFolderName = async (folderId: number) => {
-    if (!user || !password) return;
-    
-    const folder = decryptedFolders.find(f => f.id === folderId);
-    if (!folder || folder.decrypted_name) return; // Already decrypted
-    
-    try {
-      const decrypted = await foldersApi.getFolder(user.alias, folderId, password);
-      setDecryptedFolders(prev => 
-        prev.map(f => f.id === folderId ? decrypted : f)
-      );
-    } catch (error) {
-      setDecryptedFolders(prev => 
-        prev.map(f => f.id === folderId ? { ...f, decrypted_name: 'Unnamed Folder' } : f)
-      );
-    }
-  };
-
-  // Decrypt note titles for a specific folder
-  const decryptNoteTitlesInFolder = async (folderId: number | null) => {
-    if (!user || !password) return;
-    
-    const folderNotes = folderId === null 
-      ? notes 
-      : notes.filter(note => note.folder_id === folderId);
-    
-    for (const note of folderNotes) {
-      if (!decryptedTitles.has(note.id)) {
-        try {
-          const decrypted = await notesApi.getNote(user.alias, note.id, password);
-          setDecryptedTitles(prev => new Map(prev).set(note.id, decrypted.decrypted_title || 'Untitled'));
-        } catch (error) {
-          setDecryptedTitles(prev => new Map(prev).set(note.id, 'Untitled'));
-        }
-      }
-    }
-  };
-
-  // Handle folder selection - decrypt folder name and note titles
-  const handleSelectFolder = async (folderId: number | null) => {
-    setSelectedFolderId(folderId);
-    
-    if (folderId !== null) {
-      // Decrypt folder name if not already decrypted
-      await decryptFolderName(folderId);
-      // Decrypt note titles in this folder
-      await decryptNoteTitlesInFolder(folderId);
     }
   };
 
@@ -115,43 +57,68 @@ export const DashboardPage = () => {
       const note = await notesApi.getNote(user.alias, noteId, password);
       setSelectedNote(note);
       setIsCreating(false);
-      
-      // Cache the decrypted title
-      setDecryptedTitles(prev => new Map(prev).set(noteId, note.decrypted_title || 'Untitled'));
     } catch (error) {
       console.error('Failed to load note', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load note',
+        variant: 'destructive',
+      });
     }
   };
 
   const handleCreateNote = async (title: string, content: string) => {
     if (!user || !password) return;
     try {
-      await notesApi.createNote(user.alias, password, { 
-        title, 
+      const newNote = await notesApi.createNote(user.alias, password, {
+        title,
         content,
-        folder_id: selectedFolderId || undefined
       });
-      await loadNotes();
+      setNotes([newNote, ...notes]);
+      setSelectedNote({
+        ...newNote,
+        decrypted_title: title,
+        decrypted_content: content,
+      });
       setIsCreating(false);
+      toast({
+        title: 'Success',
+        description: 'Note created successfully',
+      });
     } catch (error) {
       console.error('Failed to create note', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create note',
+        variant: 'destructive',
+      });
     }
   };
 
-  const handleUpdateNote = async (noteId: number, title: string, content: string, folderId?: number) => {
+  const handleUpdateNote = async (noteId: number, title: string, content: string) => {
     if (!user || !password) return;
     try {
-      await notesApi.updateNote(user.alias, noteId, password, { 
-        title, 
+      const updatedNote = await notesApi.updateNote(user.alias, noteId, password, {
+        title,
         content,
-        folder_id: folderId
       });
-      await loadNotes();
-      if (selectedNote) {
-        handleSelectNote(noteId);
-      }
+      setNotes(notes.map(n => n.id === noteId ? updatedNote : n));
+      setSelectedNote({
+        ...updatedNote,
+        decrypted_title: title,
+        decrypted_content: content,
+      });
+      toast({
+        title: 'Success',
+        description: 'Note updated successfully',
+      });
     } catch (error) {
       console.error('Failed to update note', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update note',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -159,75 +126,17 @@ export const DashboardPage = () => {
     if (!user || !password) return;
     try {
       await notesApi.deleteNote(user.alias, noteId, password);
-      await loadNotes();
+      setNotes(notes.filter(n => n.id !== noteId));
       setSelectedNote(null);
+      toast({
+        title: 'Success',
+        description: 'Note deleted successfully',
+      });
     } catch (error) {
       console.error('Failed to delete note', error);
-    }
-  };
-
-  // Folder handlers
-  const handleCreateFolder = async (name: string, color: string) => {
-    if (!user || !password) return;
-    try {
-      await foldersApi.createFolder(user.alias, password, { name, color });
-      await loadNotes();
-      toast({
-        title: 'Folder created',
-        description: `"${name}" has been created.`,
-      });
-    } catch (error) {
-      console.error('Failed to create folder', error);
       toast({
         title: 'Error',
-        description: 'Failed to create folder',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleEditFolder = (folder: DecryptedFolder) => {
-    setEditingFolder(folder);
-    setFolderDialogOpen(true);
-  };
-
-  const handleUpdateFolder = async (name: string, color: string) => {
-    if (!user || !password || !editingFolder) return;
-    try {
-      await foldersApi.updateFolder(user.alias, editingFolder.id, password, { name, color });
-      await loadNotes();
-      setEditingFolder(null);
-      toast({
-        title: 'Folder updated',
-        description: `Folder has been renamed to "${name}".`,
-      });
-    } catch (error) {
-      console.error('Failed to update folder', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update folder',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleDeleteFolder = async (folderId: number) => {
-    if (!user || !password) return;
-    try {
-      await foldersApi.deleteFolder(user.alias, folderId, password);
-      await loadNotes();
-      if (selectedFolderId === folderId) {
-        setSelectedFolderId(null);
-      }
-      toast({
-        title: 'Folder deleted',
-        description: 'Notes have been moved to unfiled.',
-      });
-    } catch (error) {
-      console.error('Failed to delete folder', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to delete folder',
+        description: 'Failed to delete note',
         variant: 'destructive',
       });
     }
@@ -236,6 +145,11 @@ export const DashboardPage = () => {
   const handleLogout = () => {
     logout();
     navigate('/');
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   if (loading) {
@@ -248,7 +162,9 @@ export const DashboardPage = () => {
 
   return (
     <div className="h-screen bg-background flex">
+      {/* Sidebar */}
       <div className="w-80 border-r border-border flex flex-col">
+        {/* Header */}
         <div className="p-4 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-primary" />
@@ -259,7 +175,8 @@ export const DashboardPage = () => {
           </Button>
         </div>
 
-        <div className="p-4 space-y-2">
+        {/* New Note Button */}
+        <div className="p-4 border-b border-border">
           <Button
             onClick={() => {
               setIsCreating(true);
@@ -270,42 +187,65 @@ export const DashboardPage = () => {
             <Plus className="w-4 h-4 mr-2" />
             New Note
           </Button>
-          <Button
-            onClick={() => {
-              setEditingFolder(null);
-              setFolderDialogOpen(true);
-            }}
-            variant="outline"
-            className="w-full"
-          >
-            <FolderPlus className="w-4 h-4 mr-2" />
-            New Folder
-          </Button>
         </div>
 
-        <ScrollArea className="flex-1 px-2">
-          <FolderList
-            folders={decryptedFolders}
-            notes={notes}
-            selectedFolderId={selectedFolderId}
-            selectedNoteId={selectedNote?.id}
-            onSelectFolder={handleSelectFolder}
-            onSelectNote={handleSelectNote}
-            onEditFolder={handleEditFolder}
-            onDeleteFolder={handleDeleteFolder}
-            onFolderExpand={decryptFolderName}
-            decryptedTitles={decryptedTitles}
-          />
+        {/* Notes List */}
+        <ScrollArea className="flex-1">
+          <div className="space-y-1 p-2">
+            {notes.length === 0 ? (
+              <div className="p-4 text-center text-sm text-muted-foreground">
+                No notes yet. Create your first note!
+              </div>
+            ) : (
+              notes.map((note) => (
+                <div key={note.id} className="flex items-start gap-2 p-2 rounded-lg hover:bg-secondary/50 transition-colors group">
+                  <button
+                    onClick={() => handleSelectNote(note.id)}
+                    className={`flex-1 text-left ${
+                      selectedNote?.id === note.id
+                        ? 'bg-primary text-primary-foreground px-2 py-2 rounded'
+                        : ''
+                    }`}
+                  >
+                    <div className="flex items-start gap-2">
+                      <FileText className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          Note #{note.id}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDate(note.created_at)}
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="w-6 h-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm('Delete this note?')) {
+                        handleDeleteNote(note.id);
+                      }
+                    }}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))
+            )}
+          </div>
         </ScrollArea>
       </div>
 
+      {/* Main Content */}
       <div className="flex-1 bg-background/50">
         {isCreating ? (
           <NoteEditor onSave={handleCreateNote} onCancel={() => setIsCreating(false)} />
         ) : selectedNote ? (
           <NoteViewer
             note={selectedNote}
-            folders={decryptedFolders}
             onUpdate={handleUpdateNote}
             onDelete={handleDeleteNote}
           />
@@ -323,16 +263,6 @@ export const DashboardPage = () => {
           </div>
         )}
       </div>
-
-      <FolderDialog
-        open={folderDialogOpen}
-        onClose={() => {
-          setFolderDialogOpen(false);
-          setEditingFolder(null);
-        }}
-        onSave={editingFolder ? handleUpdateFolder : handleCreateFolder}
-        folder={editingFolder}
-      />
     </div>
   );
 };

@@ -44,6 +44,7 @@ export interface LoginResponse {
   success: boolean;
   message: string;
   user: User | null;
+  token?: string;
 }
 
 export interface RegisterRequest {
@@ -83,6 +84,7 @@ export interface AuthRequest {
 export interface AuthContextType {
   user: User | null;
   password: string | null;
+  token: string | null;
   login: (alias: string, password: string) => Promise<void>;
   register: (alias: string, password: string) => Promise<void>;
   logout: () => void;

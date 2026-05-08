@@ -24,12 +24,30 @@ const api = axios.create({
   },
 });
 
+// Store for JWT token
+let authToken: string | null = null;
+
+export const setAuthToken = (token: string | null) => {
+  authToken = token;
+};
+
+export const getAuthToken = () => authToken;
+
+// Request interceptor to add JWT token to all requests
+api.interceptors.request.use((config) => {
+  if (authToken) {
+    config.headers.Authorization = `Bearer ${authToken}`;
+  }
+  return config;
+});
+
 // Error handling interceptor
 api.interceptors.response.use(
   response => response,
   error => {
     if (error.response?.status === 401) {
-      console.error('Authentication failed');
+      console.error('Authentication failed or token expired');
+      setAuthToken(null);
     }
     throw error;
   }
@@ -43,6 +61,9 @@ export const authApi = {
 
   login: async (data: LoginRequest): Promise<LoginResponse> => {
     const response = await api.post('/login', data);
+    if (response.data.token) {
+      setAuthToken(response.data.token);
+    }
     return response.data;
   },
 };

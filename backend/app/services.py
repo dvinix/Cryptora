@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import select
-from app.models import User, Note, Folder
-from app.schemas import UserCreate, NoteCreate, NoteUpdate, FolderCreate, FolderUpdate
+from app.models import User, Note
+from app.schemas import UserCreate, NoteCreate, NoteUpdate
 from app.crypto import CryptoUtils
 from datetime import datetime
 from typing import Optional, List
@@ -50,63 +50,6 @@ class UserService:
             self.db.commit()
 
 
-class FolderService:
-    def __init__(self, db: Session):
-        self.db = db
-    
-    def get_folder_by_id(self, folder_id: int) -> Optional[Folder]:
-        stmt = select(Folder).where(Folder.id == folder_id, Folder.is_active == True)
-        return self.db.scalars(stmt).first()
-    
-    def get_user_folders(self, user_id: int) -> List[Folder]:
-        stmt = select(Folder).where(Folder.user_id == user_id, Folder.is_active == True).order_by(Folder.created_at.asc())
-        return list(self.db.scalars(stmt).all())
-    
-    def create_folder(self, user_id: int, folder_data: FolderCreate, password: str) -> Folder:
-        encrypted_name = CryptoUtils.encrypt(folder_data.name, password)
-        folder = Folder(
-            user_id=user_id,
-            encrypted_name=encrypted_name,
-            color=folder_data.color or 'default',
-            icon=folder_data.icon or 'folder',
-            created_at=datetime.utcnow()
-        )
-        self.db.add(folder)
-        self.db.commit()
-        self.db.refresh(folder)
-        return folder
-    
-    def update_folder(self, folder_id: int, folder_data: FolderUpdate, password: str) -> Folder:
-        folder = self.get_folder_by_id(folder_id)
-        if folder_data.name is not None:
-            folder.encrypted_name = CryptoUtils.encrypt(folder_data.name, password)
-        if folder_data.color is not None:
-            folder.color = folder_data.color
-        if folder_data.icon is not None:
-            folder.icon = folder_data.icon
-        self.db.commit()
-        self.db.refresh(folder)
-        return folder
-    
-    def delete_folder(self, folder_id: int) -> None:
-        folder = self.get_folder_by_id(folder_id)
-        if folder:
-            # Remove folder reference from notes but don't delete them
-            stmt = select(Note).where(Note.folder_id == folder_id, Note.is_active == True)
-            notes = self.db.scalars(stmt).all()
-            for note in notes:
-                note.folder_id = None
-            folder.is_active = False
-            self.db.commit()
-    
-    def decrypt_folder_name(self, folder: Folder, password: str) -> Optional[str]:
-        try:
-            return CryptoUtils.decrypt(folder.encrypted_name, password)
-        except (ValueError, Exception) as e:
-            logger.debug(f"Failed to decrypt folder {folder.id}: {type(e).__name__}")
-            return None
-
-
 class NoteService:
     def __init__(self, db: Session):
         self.db = db
@@ -125,7 +68,6 @@ class NoteService:
         content_hash = CryptoUtils.hash_content(encrypted_content)
         note = Note(
             user_id=user_id,
-            folder_id=note_data.folder_id,
             encrypted_title=encrypted_title,
             encrypted_content=encrypted_content,
             content_hash=content_hash,
@@ -144,9 +86,6 @@ class NoteService:
         content_hash = CryptoUtils.hash_content(encrypted_content)
         note.encrypted_content = encrypted_content
         note.content_hash = content_hash
-        # Handle folder_id: -1 means remove from folder, None means no change
-        if note_data.folder_id is not None:
-            note.folder_id = None if note_data.folder_id == -1 else note_data.folder_id
         note.updated_at = datetime.utcnow()
         self.db.commit()
         self.db.refresh(note)

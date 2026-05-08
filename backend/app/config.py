@@ -13,8 +13,13 @@ class Settings(BaseSettings):
     DESCRIPTION: str = "End-to-end encrypted notepad with zero-knowledge architecture"
     
     # Security - CORS configuration
-    CORS_ORIGINS: str = "https://cryptora.dvinix.dev,http://localhost:3000,http://localhost:5173"  # Comma-separated list
+    CORS_ORIGINS: str
     CORS_ALLOW_CREDENTIALS: bool = False  # Set to True only if using credentials with restricted origins
+    
+    # Security - JWT configuration
+    JWT_SECRET_KEY: str
+    JWT_ALGORITHM: str
+    JWT_EXPIRATION_HOURS: int
     
     @property
     def cors_origins_list(self) -> List[str]:
