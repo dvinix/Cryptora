@@ -39,7 +39,7 @@ export const DashboardPage = () => {
   const loadNotes = async () => {
     if (!user || !password) return;
     try {
-      const data = await notesApi.getUserWithNotes(user.alias);
+      const data = await notesApi.getUserWithNotes(user.alias, password);
       setNotes(data.notes);
       
       // Don't decrypt folder names on load - will decrypt on demand

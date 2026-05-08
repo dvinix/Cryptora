@@ -10,10 +10,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const storedUser = sessionStorage.getItem('cryptora_user');
-    const storedPassword = sessionStorage.getItem('cryptora_password');
-    if (storedUser && storedPassword) {
+    if (storedUser) {
       setUser(JSON.parse(storedUser));
-      setPassword(storedPassword);
+      // Note: Password is NOT persisted. User must re-enter on page refresh.
     }
   }, []);
 
@@ -23,7 +22,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(response.user);
       setPassword(pwd);
       sessionStorage.setItem('cryptora_user', JSON.stringify(response.user));
-      sessionStorage.setItem('cryptora_password', pwd);
+      // Password is stored in memory only (not persisted to storage)
     } else {
       throw new Error(response.message);
     }
@@ -34,14 +33,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(user);
     setPassword(pwd);
     sessionStorage.setItem('cryptora_user', JSON.stringify(user));
-    sessionStorage.setItem('cryptora_password', pwd);
+    // Password is stored in memory only (not persisted to storage)
   };
 
   const logout = () => {
     setUser(null);
     setPassword(null);
     sessionStorage.removeItem('cryptora_user');
-    sessionStorage.removeItem('cryptora_password');
+    // Password already cleared from memory
   };
 
   return (

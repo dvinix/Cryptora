@@ -76,6 +76,10 @@ export interface UpdateNoteRequest {
   previous_hash?: string;
 }
 
+export interface AuthRequest {
+  password: string;
+}
+
 export interface AuthContextType {
   user: User | null;
   password: string | null;

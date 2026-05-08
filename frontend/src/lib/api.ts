@@ -14,7 +14,7 @@ import type {
   UpdateFolderRequest,
 } from './types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://cryptora-backend-9ghj.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 const API_PREFIX = '/api/v1';
 
 const api = axios.create({
@@ -23,6 +23,17 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+// Error handling interceptor
+api.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response?.status === 401) {
+      console.error('Authentication failed');
+    }
+    throw error;
+  }
+);
 
 export const authApi = {
   register: async (data: RegisterRequest): Promise<User> => {
@@ -42,7 +53,10 @@ export const foldersApi = {
     password: string,
     data: CreateFolderRequest
   ): Promise<Folder> => {
-    const response = await api.post(`/${alias}/folders?password=${password}`, data);
+    const response = await api.post(`/${alias}/folders`, {
+      ...data,
+      password,
+    });
     return response.data;
   },
 
@@ -51,7 +65,7 @@ export const foldersApi = {
     folderId: number,
     password: string
   ): Promise<DecryptedFolder> => {
-    const response = await api.get(`/${alias}/folders/${folderId}?password=${password}`);
+    const response = await api.post(`/${alias}/folders/${folderId}`, { password });
     return response.data;
   },
 
@@ -61,18 +75,24 @@ export const foldersApi = {
     password: string,
     data: UpdateFolderRequest
   ): Promise<Folder> => {
-    const response = await api.put(`/${alias}/folders/${folderId}?password=${password}`, data);
+    const response = await api.put(`/${alias}/folders/${folderId}`, {
+      ...data,
+      password,
+    });
     return response.data;
   },
 
   deleteFolder: async (alias: string, folderId: number, password: string): Promise<void> => {
-    await api.delete(`/${alias}/folders/${folderId}?password=${password}`);
+    await api.delete(`/${alias}/folders/${folderId}`, {
+      data: { password },
+    });
   },
 };
 
 export const notesApi = {
-  getUserWithNotes: async (alias: string): Promise<{ user: User; notes: Note[]; folders: Folder[] }> => {
-    const response = await api.get(`/${alias}`);
+  // Fetch user with notes - requires password authentication in body
+  getUserWithNotes: async (alias: string, password: string): Promise<{ user: User; notes: Note[]; folders: Folder[] }> => {
+    const response = await api.post(`/${alias}/login`, { password });
     return {
       user: {
         id: response.data.id,
@@ -91,7 +111,10 @@ export const notesApi = {
     password: string,
     data: CreateNoteRequest
   ): Promise<Note> => {
-    const response = await api.post(`/${alias}/notes?password=${password}`, data);
+    const response = await api.post(`/${alias}/notes`, {
+      ...data,
+      password,
+    });
     return response.data;
   },
 
@@ -100,7 +123,7 @@ export const notesApi = {
     noteId: number,
     password: string
   ): Promise<DecryptedNote> => {
-    const response = await api.get(`/${alias}/notes/${noteId}?password=${password}`);
+    const response = await api.post(`/${alias}/notes/${noteId}`, { password });
     return response.data;
   },
 
@@ -110,11 +133,16 @@ export const notesApi = {
     password: string,
     data: UpdateNoteRequest
   ): Promise<Note> => {
-    const response = await api.put(`/${alias}/notes/${noteId}?password=${password}`, data);
+    const response = await api.put(`/${alias}/notes/${noteId}`, {
+      ...data,
+      password,
+    });
     return response.data;
   },
 
   deleteNote: async (alias: string, noteId: number, password: string): Promise<void> => {
-    await api.delete(`/${alias}/notes/${noteId}?password=${password}`);
+    await api.delete(`/${alias}/notes/${noteId}`, {
+      data: { password },
+    });
   },
 };
