@@ -19,7 +19,6 @@ export const DashboardPage = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Set auth token when user logs in or component mounts
   useEffect(() => {
     if (token) {
       setAuthToken(token);
@@ -31,10 +30,11 @@ export const DashboardPage = () => {
       navigate('/');
       return;
     }
-    loadNotes();
+    loadNotesList();
   }, [isAuthenticated]);
 
-  const loadNotes = async () => {
+  // Only load the list of notes (metadata), not content
+  const loadNotesList = async () => {
     if (!user || !password) return;
     try {
       const data = await notesApi.getUserWithNotes(user.alias, password);
@@ -51,6 +51,7 @@ export const DashboardPage = () => {
     }
   };
 
+  // Lazy load note content only when clicked
   const handleSelectNote = async (noteId: number) => {
     if (!user || !password) return;
     try {
@@ -68,19 +69,25 @@ export const DashboardPage = () => {
   };
 
   const handleCreateNote = async (title: string, content: string) => {
-    if (!user || !password) return;
+    if (!user || !password || !content.trim()) return;
     try {
       const newNote = await notesApi.createNote(user.alias, password, {
-        title,
-        content,
+        title: title.trim() || undefined,
+        content: content.trim(),
       });
-      setNotes([newNote, ...notes]);
+      
+      // Add to list and show immediately
+      setNotes([
+        { ...newNote, decrypted_title: title.trim() || null },
+        ...notes,
+      ]);
       setSelectedNote({
         ...newNote,
-        decrypted_title: title,
-        decrypted_content: content,
+        decrypted_title: title.trim() || null,
+        decrypted_content: content.trim(),
       });
       setIsCreating(false);
+      
       toast({
         title: 'Success',
         description: 'Note created successfully',
@@ -96,21 +103,27 @@ export const DashboardPage = () => {
   };
 
   const handleUpdateNote = async (noteId: number, title: string, content: string) => {
-    if (!user || !password) return;
+    if (!user || !password || !content.trim()) return;
     try {
       const updatedNote = await notesApi.updateNote(user.alias, noteId, password, {
-        title,
-        content,
+        title: title.trim() || undefined,
+        content: content.trim(),
       });
-      setNotes(notes.map(n => n.id === noteId ? updatedNote : n));
+      
+      // Update in list
+      setNotes(
+        notes.map(n =>
+          n.id === noteId
+            ? { ...updatedNote, decrypted_title: title.trim() || null }
+            : n
+        )
+      );
+      
+      // Update selected note
       setSelectedNote({
         ...updatedNote,
-        decrypted_title: title,
-        decrypted_content: content,
-      });
-      toast({
-        title: 'Success',
-        description: 'Note updated successfully',
+        decrypted_title: title.trim() || null,
+        decrypted_content: content.trim(),
       });
     } catch (error) {
       console.error('Failed to update note', error);
@@ -198,20 +211,20 @@ export const DashboardPage = () => {
               </div>
             ) : (
               notes.map((note) => (
-                <div key={note.id} className="flex items-start gap-2 p-2 rounded-lg hover:bg-secondary/50 transition-colors group">
+                <div key={note.id} className="flex items-center gap-2 group">
                   <button
                     onClick={() => handleSelectNote(note.id)}
-                    className={`flex-1 text-left ${
+                    className={`flex-1 p-3 rounded-lg text-left transition-colors ${
                       selectedNote?.id === note.id
-                        ? 'bg-primary text-primary-foreground px-2 py-2 rounded'
-                        : ''
+                        ? 'bg-primary text-primary-foreground'
+                        : 'hover:bg-secondary'
                     }`}
                   >
                     <div className="flex items-start gap-2">
                       <FileText className="w-4 h-4 mt-0.5 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">
-                          Note #{note.id}
+                          {note.decrypted_title?.trim() || `Note #${note.id}`}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {formatDate(note.created_at)}
@@ -222,7 +235,7 @@ export const DashboardPage = () => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="w-6 h-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="w-8 h-8 opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={(e) => {
                       e.stopPropagation();
                       if (confirm('Delete this note?')) {
@@ -256,8 +269,8 @@ export const DashboardPage = () => {
                 <FileText className="w-10 h-10 text-primary" />
               </div>
               <div className="space-y-2">
-                <p className="text-lg font-medium text-white">No note selected</p>
-                <p className="text-muted-foreground">Select a note from the sidebar or create a new one</p>
+                <p className="text-lg font-medium">No note selected</p>
+                <p className="text-sm text-muted-foreground">Select a note from the sidebar or create a new one</p>
               </div>
             </div>
           </div>

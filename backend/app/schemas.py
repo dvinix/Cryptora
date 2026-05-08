@@ -68,7 +68,7 @@ class NoteWithDecrypted(NoteResponse):
 
 class UserWithNotes(UserResponse):
     """User with all their notes"""
-    notes: List[NoteResponse] = []
+    notes: List[NoteWithDecrypted] = []
 
 class LoginRequest(BaseModel):
     """Schema for user login"""

@@ -22,7 +22,7 @@ export const NoteEditor = ({
 
   const handleSave = () => {
     if (content.trim()) {
-      onSave(title, content);
+      onSave(title.trim(), content.trim());
     }
   };
 
@@ -37,7 +37,7 @@ export const NoteEditor = ({
           className="max-w-md"
         />
         <div className="flex gap-2">
-          <Button onClick={handleSave} size="sm">
+          <Button onClick={handleSave} size="sm" disabled={!content.trim()}>
             <Save className="w-4 h-4 mr-2" />
             Save
           </Button>
@@ -46,23 +46,14 @@ export const NoteEditor = ({
           </Button>
         </div>
       </div>
-      <div className="flex-1 p-6 overflow-auto bg-background">
-        <div className="max-w-full mx-auto h-full px-4">
-          <div className="relative rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm shadow-lg overflow-hidden h-full">
-            {/* Notepad lines effect */}
-            <div className="absolute inset-0 pointer-events-none opacity-5">
-              {Array.from({ length: 50 }).map((_, i) => (
-                <div key={i} className="border-b border-white/20" style={{ height: '32px' }} />
-              ))}
-            </div>
-            <Textarea
-              placeholder="Start writing your note..."
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="h-full min-h-[calc(100vh-200px)] resize-none text-base bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-white leading-relaxed p-6 relative z-10"
-            />
-          </div>
-        </div>
+      <div className="flex-1 p-4 overflow-auto">
+        <Textarea
+          placeholder="Start writing your note..."
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          className="h-full min-h-[calc(100vh-150px)] resize-none text-base border-0 focus-visible:ring-0 focus-visible:ring-offset-0 leading-relaxed p-4"
+          autoFocus
+        />
       </div>
     </div>
   );

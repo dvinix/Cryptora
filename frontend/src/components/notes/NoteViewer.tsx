@@ -28,10 +28,10 @@ export const NoteViewer = ({ note, onUpdate, onDelete }: NoteViewerProps) => {
   // Auto-save after 1 second of inactivity
   useEffect(() => {
     const hasChanges = 
-      title !== (note.decrypted_title || '') || 
-      content !== note.decrypted_content;
+      title.trim() !== (note.decrypted_title || '').trim() || 
+      content.trim() !== note.decrypted_content.trim();
     
-    if (!hasChanges) return;
+    if (!hasChanges || !content.trim()) return;
 
     const timer = setTimeout(() => {
       handleSave();
@@ -41,9 +41,15 @@ export const NoteViewer = ({ note, onUpdate, onDelete }: NoteViewerProps) => {
   }, [title, content]);
 
   const handleSave = async () => {
-    if (content.trim() && (title !== (note.decrypted_title || '') || content !== note.decrypted_content)) {
+    if (!content.trim()) return;
+    
+    const hasChanges = 
+      title.trim() !== (note.decrypted_title || '').trim() || 
+      content.trim() !== note.decrypted_content.trim();
+    
+    if (hasChanges) {
       setIsSaving(true);
-      await onUpdate(note.id, title, content);
+      await onUpdate(note.id, title.trim(), content.trim());
       setIsSaving(false);
     }
   };
@@ -75,11 +81,11 @@ export const NoteViewer = ({ note, onUpdate, onDelete }: NoteViewerProps) => {
             placeholder="Untitled Note"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="text-xl font-semibold border-0 bg-transparent px-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="text-lg font-semibold border-0 bg-transparent px-0 focus-visible:ring-0 focus-visible:ring-offset-0"
           />
           <div className="flex items-center gap-2 mt-1">
             {isSaving && (
-              <span className="text-sm text-muted-foreground">Saving...</span>
+              <span className="text-xs text-muted-foreground">Saving...</span>
             )}
             <span className="text-xs text-muted-foreground">
               Created: {new Date(note.created_at).toLocaleDateString()}
@@ -87,11 +93,7 @@ export const NoteViewer = ({ note, onUpdate, onDelete }: NoteViewerProps) => {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button
-            onClick={handleCopy}
-            variant="outline"
-            size="sm"
-          >
+          <Button onClick={handleCopy} variant="outline" size="sm">
             {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
           </Button>
           <Button
@@ -108,12 +110,14 @@ export const NoteViewer = ({ note, onUpdate, onDelete }: NoteViewerProps) => {
         </div>
       </div>
 
-      <Textarea
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        placeholder="Start writing your note..."
-        className="flex-1 border-0 focus-visible:ring-0 resize-none p-4 focus-visible:ring-offset-0"
-      />
+      <div className="flex-1 p-4 overflow-auto">
+        <Textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="Start writing your note..."
+          className="h-full min-h-[calc(100vh-150px)] border-0 focus-visible:ring-0 resize-none text-base focus-visible:ring-offset-0 leading-relaxed p-4"
+        />
+      </div>
     </div>
   );
 };

@@ -86,7 +86,28 @@ async def get_user_with_notes(alias: str, auth: GetUserRequest, db: Session = De
     if not user_service.verify_password(user, auth.password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid password")
     notes = note_service.get_user_notes(user.id)
-    return UserWithNotes(id=user.id, alias=user.alias, encrypted_alias=user.encrypted_alias, created_at=user.created_at, last_accessed_at=user.last_accessed_at, notes=notes)
+    notes_with_titles = [
+        NoteWithDecrypted(
+            id=note.id,
+            user_id=note.user_id,
+            encrypted_title=note.encrypted_title,
+            encrypted_content=note.encrypted_content,
+            content_hash=note.content_hash,
+            created_at=note.created_at,
+            updated_at=note.updated_at,
+            decrypted_title=note_service.decrypt_note_title(note, auth.password),
+            decrypted_content=None,
+        )
+        for note in notes
+    ]
+    return UserWithNotes(
+        id=user.id,
+        alias=user.alias,
+        encrypted_alias=user.encrypted_alias,
+        created_at=user.created_at,
+        last_accessed_at=user.last_accessed_at,
+        notes=notes_with_titles,
+    )
 
 
 # ============= Note Routes =============

@@ -8,14 +8,16 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
-try:
-    from app.database import Base, engine
-    Base.metadata.create_all(bind=engine)
-    logger.info("✅ Database tables created successfully")
-except Exception as e:
-    logger.error(f"⚠️ Database initialization failed: {e}")
-    logger.info("App will start but database operations may fail")
+# Note: Database tables should be managed via Alembic migrations
+# Run: alembic upgrade head
+# Uncomment below only for initial development setup
+# try:
+#     from app.database import Base, engine
+#     Base.metadata.create_all(bind=engine)
+#     logger.info("✅ Database tables created successfully")
+# except Exception as e:
+#     logger.error(f"⚠️ Database initialization failed: {e}")
+#     logger.info("App will start but database operations may fail")
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -29,8 +31,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
     allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Log CORS configuration

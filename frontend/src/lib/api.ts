@@ -5,16 +5,12 @@ import type {
   RegisterRequest,
   User,
   Note,
-  Folder,
   DecryptedNote,
-  DecryptedFolder,
   CreateNoteRequest,
   UpdateNoteRequest,
-  CreateFolderRequest,
-  UpdateFolderRequest,
 } from './types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? '';
 const API_PREFIX = '/api/v1';
 
 const api = axios.create({
@@ -68,51 +64,9 @@ export const authApi = {
   },
 };
 
-export const foldersApi = {
-  createFolder: async (
-    alias: string,
-    password: string,
-    data: CreateFolderRequest
-  ): Promise<Folder> => {
-    const response = await api.post(`/${alias}/folders`, {
-      ...data,
-      password,
-    });
-    return response.data;
-  },
-
-  getFolder: async (
-    alias: string,
-    folderId: number,
-    password: string
-  ): Promise<DecryptedFolder> => {
-    const response = await api.post(`/${alias}/folders/${folderId}`, { password });
-    return response.data;
-  },
-
-  updateFolder: async (
-    alias: string,
-    folderId: number,
-    password: string,
-    data: UpdateFolderRequest
-  ): Promise<Folder> => {
-    const response = await api.put(`/${alias}/folders/${folderId}`, {
-      ...data,
-      password,
-    });
-    return response.data;
-  },
-
-  deleteFolder: async (alias: string, folderId: number, password: string): Promise<void> => {
-    await api.delete(`/${alias}/folders/${folderId}`, {
-      data: { password },
-    });
-  },
-};
-
 export const notesApi = {
-  // Fetch user with notes - requires password authentication in body
-  getUserWithNotes: async (alias: string, password: string): Promise<{ user: User; notes: Note[]; folders: Folder[] }> => {
+  // Fetch user with notes list (metadata only)
+  getUserWithNotes: async (alias: string, password: string): Promise<{ user: User; notes: Note[] }> => {
     const response = await api.post(`/${alias}/login`, { password });
     return {
       user: {
@@ -122,9 +76,8 @@ export const notesApi = {
         created_at: response.data.created_at,
         last_accessed_at: response.data.last_accessed_at,
       },
-      notes: response.data.notes,
-      folders: response.data.folders || [],
-    };
+      notes: response.data.notes || [],
+  };
   },
 
   createNote: async (
