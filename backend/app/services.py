@@ -5,6 +5,9 @@ from app.schemas import UserCreate, NoteCreate, NoteUpdate, FolderCreate, Folder
 from app.crypto import CryptoUtils
 from datetime import datetime
 from typing import Optional, List
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class UserService:
@@ -36,7 +39,8 @@ class UserService:
         try:
             decrypted = CryptoUtils.decrypt(user.encrypted_alias, password)
             return decrypted == user.alias
-        except:
+        except (ValueError, Exception) as e:
+            logger.debug(f"Password verification failed for user {user.id}: {type(e).__name__}")
             return False
     
     def update_last_accessed(self, user_id: int) -> None:
@@ -98,7 +102,8 @@ class FolderService:
     def decrypt_folder_name(self, folder: Folder, password: str) -> Optional[str]:
         try:
             return CryptoUtils.decrypt(folder.encrypted_name, password)
-        except:
+        except (ValueError, Exception) as e:
+            logger.debug(f"Failed to decrypt folder {folder.id}: {type(e).__name__}")
             return None
 
 
@@ -157,11 +162,13 @@ class NoteService:
     def decrypt_note_content(self, note: Note, password: str) -> Optional[str]:
         try:
             return CryptoUtils.decrypt(note.encrypted_content, password)
-        except:
+        except (ValueError, Exception) as e:
+            logger.debug(f"Failed to decrypt note {note.id} content: {type(e).__name__}")
             return None
     
     def decrypt_note_title(self, note: Note, password: str) -> Optional[str]:
         try:
             return CryptoUtils.decrypt(note.encrypted_title, password) if note.encrypted_title else None
-        except:
+        except (ValueError, Exception) as e:
+            logger.debug(f"Failed to decrypt note {note.id} title: {type(e).__name__}")
             return None

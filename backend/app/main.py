@@ -8,7 +8,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Initialize database tables (with error handling)
+
 try:
     from app.database import Base, engine
     Base.metadata.create_all(bind=engine)
@@ -25,27 +25,16 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# CORS configuration
-origins = [
-    "https://divyanshugarg.me",
-    "https://www.divyanshugarg.me",
-    "http://localhost:5173",
-    "http://localhost:3000",
-    "http://127.0.0.1:5173",
-    "http://127.0.0.1:3000",
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allow_headers=["*"],
-    expose_headers=["*"],
+    allow_origins=settings.cors_origins_list,
+    allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 # Log CORS configuration
-logger.info(f"🌐 CORS enabled for origins: {origins}")
+logger.info(f"🌐 CORS configured for origins: {settings.cors_origins_list}")
 
 # Health check endpoint (before router to avoid conflicts)
 @app.get("/health", tags=["Health"])

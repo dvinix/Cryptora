@@ -114,3 +114,15 @@ class LoginResponse(BaseModel):
     success: bool
     message: str
     user: Optional[UserResponse] = None
+
+
+# ============= Auth Request Schemas =============
+
+class AuthRequest(BaseModel):
+    """Schema for password-protected requests"""
+    password: str = Field(..., min_length=4, description="Password for authentication")
+
+
+class GetUserRequest(BaseModel):
+    """Schema for retrieving user data with password"""
+    password: str = Field(..., min_length=4, description="Password for authentication")

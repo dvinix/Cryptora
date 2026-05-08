@@ -35,6 +35,121 @@
 
 ---
 
+## 🎯 Project Overview (ATS-Optimized)
+
+**Cryptora** is a full-stack encrypted note-taking application implementing zero-knowledge architecture with end-to-end encryption. Built with modern Python backend (FastAPI) and React TypeScript frontend, featuring enterprise-grade security, RESTful API design, and PostgreSQL database management.
+
+### Backend Technical Highlights
+
+#### Core Technologies & Frameworks
+- **FastAPI Framework**: Async REST API with automatic OpenAPI documentation (Swagger/ReDoc)
+- **Python 3.8+**: Type-hinted, object-oriented backend architecture
+- **PostgreSQL**: Relational database with ACID compliance and complex queries
+- **SQLAlchemy 2.0**: Modern ORM with type-safe database operations and relationship mapping
+- **Alembic**: Database migration management and version control
+- **Uvicorn**: High-performance ASGI server for async request handling
+- **Pydantic**: Data validation, serialization, and settings management
+
+#### Security & Cryptography
+- **AES-256-GCM Encryption**: Industry-standard symmetric encryption for data at rest
+- **Zero-Knowledge Architecture**: Server-side encryption without password storage
+- **Cryptography Library**: Python cryptography package for secure key derivation (PBKDF2)
+- **Password Verification**: Encrypted alias validation without plaintext password storage
+- **Content Hashing**: SHA-256 hashing for data integrity and conflict detection
+- **CORS Middleware**: Configurable cross-origin resource sharing for secure API access
+
+#### API Architecture & Design Patterns
+- **RESTful API Design**: Resource-based endpoints following REST principles
+- **Service Layer Pattern**: Separation of business logic from route handlers
+- **Repository Pattern**: Database abstraction through service classes
+- **Dependency Injection**: FastAPI's built-in DI for database session management
+- **HTTP Status Codes**: Proper use of 200, 201, 204, 401, 404, 409 responses
+- **Error Handling**: Centralized exception handling with HTTPException
+- **Request/Response Models**: Pydantic schemas for API contract validation
+
+#### Database Design & ORM
+- **Relational Data Modeling**: User, Note, and Folder entities with foreign key relationships
+- **Cascade Operations**: Automatic cleanup with ON DELETE CASCADE
+- **Soft Deletes**: is_active flag for data retention and recovery
+- **Database Indexing**: Optimized queries with composite indexes on frequently accessed columns
+- **SQLAlchemy Relationships**: One-to-many relationships with lazy/eager loading
+- **Migration Scripts**: Alembic migrations for schema versioning and rollback capability
+- **Connection Pooling**: Efficient database connection management
+
+#### Advanced Features
+- **Folder Organization**: Hierarchical note organization with encrypted folder names
+- **Optimistic Locking**: Content hash-based conflict detection for concurrent updates
+- **Lazy Loading**: On-demand decryption to minimize API calls and improve performance
+- **Timestamp Tracking**: created_at, updated_at, last_accessed_at for audit trails
+- **Batch Operations**: Efficient bulk queries for user notes and folders
+- **Query Optimization**: Filtered queries with WHERE clauses and ORDER BY
+
+#### API Endpoints Implemented
+```
+Authentication & User Management:
+- POST /api/v1/register - User registration with encrypted alias
+- POST /api/v1/login - Password verification and session management
+- GET /api/v1/{alias} - User profile with notes and folders
+
+Folder Management (CRUD):
+- POST /api/v1/{alias}/folders - Create encrypted folder
+- GET /api/v1/{alias}/folders/{id} - Retrieve and decrypt folder
+- PUT /api/v1/{alias}/folders/{id} - Update folder metadata
+- DELETE /api/v1/{alias}/folders/{id} - Soft delete with note preservation
+
+Note Management (CRUD):
+- POST /api/v1/{alias}/notes - Create encrypted note
+- GET /api/v1/{alias}/notes/{id} - Retrieve and decrypt note
+- PUT /api/v1/{alias}/notes/{id} - Update with conflict detection
+- DELETE /api/v1/{alias}/notes/{id} - Soft delete note
+
+Health & Monitoring:
+- GET /health - Service health check endpoint
+- GET /docs - Interactive Swagger API documentation
+- GET /redoc - Alternative ReDoc API documentation
+```
+
+#### Development Best Practices
+- **Environment Configuration**: python-dotenv for environment variable management
+- **Logging**: Structured logging with Python logging module
+- **Type Safety**: Full type hints with Mapped columns and Pydantic models
+- **Code Organization**: Modular structure (models, schemas, services, routers)
+- **Database Sessions**: Context manager pattern for automatic session cleanup
+- **API Versioning**: /api/v1 prefix for future compatibility
+- **Documentation**: Auto-generated OpenAPI 3.0 specification
+
+#### Performance Optimizations
+- **Async/Await**: Non-blocking I/O operations with FastAPI async endpoints
+- **Database Query Optimization**: Selective column loading and filtered queries
+- **Lazy Decryption**: Client-side decryption only when data is accessed
+- **Connection Pooling**: Reusable database connections
+- **Indexed Queries**: Fast lookups on alias, user_id, folder_id columns
+
+#### Deployment & DevOps
+- **Requirements Management**: pip requirements.txt with pinned versions
+- **Database Initialization**: Automatic table creation on startup
+- **Error Recovery**: Graceful degradation with try-catch error handling
+- **CORS Configuration**: Production-ready cross-origin settings
+- **Health Checks**: Monitoring endpoint for uptime verification
+
+### Technical Skills Demonstrated
+- Python Backend Development
+- FastAPI Framework
+- RESTful API Design
+- PostgreSQL Database Management
+- SQLAlchemy ORM
+- Database Migrations (Alembic)
+- Cryptography & Security
+- Async Programming
+- API Documentation
+- Service-Oriented Architecture
+- Dependency Injection
+- Error Handling & Logging
+- Environment Configuration
+- Type Safety & Validation
+
+---
+
 ## ✨ What is Cryptora?
 
 **Cryptora** is a privacy-first encrypted notepad where your notes are protected with bank-level security. Unlike other note apps, your password never leaves your device—all encryption happens in your browser before anything touches our servers.
