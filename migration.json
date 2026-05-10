@@ -1,0 +1,8 @@
+{
+  "containerOverrides": [
+    {
+      "name": "backend",
+      "command": ["sh", "-c", "alembic upgrade head"]
+    }
+  ]
+}
