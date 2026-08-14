@@ -1,0 +1,123 @@
+import axios from 'axios';
+import type {
+  LoginRequest,
+  LoginResponse,
+  RegisterRequest,
+  User,
+  Note,
+  DecryptedNote,
+  CreateNoteRequest,
+  UpdateNoteRequest,
+} from './types';
+
+const rawApiUrl = import.meta.env.VITE_API_URL ?? '';
+const API_BASE_URL = rawApiUrl.endsWith('/') ? rawApiUrl.slice(0, -1) : rawApiUrl;
+const API_PREFIX = '/api/v1';
+
+const api = axios.create({
+  baseURL: API_BASE_URL ? `${API_BASE_URL}${API_PREFIX}` : API_PREFIX,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Store for JWT token
+let authToken: string | null = null;
+
+export const setAuthToken = (token: string | null) => {
+  authToken = token;
+};
+
+export const getAuthToken = () => authToken;
+
+// Request interceptor to add JWT token to all requests
+api.interceptors.request.use((config) => {
+  if (authToken) {
+    config.headers.Authorization = `Bearer ${authToken}`;
+  }
+  return config;
+});
+
+// Error handling interceptor
+api.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response?.status === 401) {
+      console.error('Authentication failed or token expired');
+      setAuthToken(null);
+    }
+    throw error;
+  }
+);
+
+export const authApi = {
+  register: async (data: RegisterRequest): Promise<User> => {
+    const response = await api.post('/register', data);
+    return response.data;
+  },
+
+  login: async (data: LoginRequest): Promise<LoginResponse> => {
+    const response = await api.post('/login', data);
+    if (response.data.token) {
+      setAuthToken(response.data.token);
+    }
+    return response.data;
+  },
+};
+
+export const notesApi = {
+  // Fetch user with notes list (metadata only)
+  getUserWithNotes: async (alias: string, password: string): Promise<{ user: User; notes: Note[] }> => {
+    const response = await api.post(`/${alias}/login`, { password });
+    return {
+      user: {
+        id: response.data.id,
+        alias: response.data.alias,
+        encrypted_alias: response.data.encrypted_alias,
+        created_at: response.data.created_at,
+        last_accessed_at: response.data.last_accessed_at,
+      },
+      notes: response.data.notes || [],
+  };
+  },
+
+  createNote: async (
+    alias: string,
+    password: string,
+    data: CreateNoteRequest
+  ): Promise<Note> => {
+    const response = await api.post(`/${alias}/notes`, {
+      ...data,
+      password,
+    });
+    return response.data;
+  },
+
+  getNote: async (
+    alias: string,
+    noteId: number,
+    password: string
+  ): Promise<DecryptedNote> => {
+    const response = await api.post(`/${alias}/notes/${noteId}`, { password });
+    return response.data;
+  },
+
+  updateNote: async (
+    alias: string,
+    noteId: number,
+    password: string,
+    data: UpdateNoteRequest
+  ): Promise<Note> => {
+    const response = await api.put(`/${alias}/notes/${noteId}`, {
+      ...data,
+      password,
+    });
+    return response.data;
+  },
+
+  deleteNote: async (alias: string, noteId: number, password: string): Promise<void> => {
+    await api.delete(`/${alias}/notes/${noteId}`, {
+      data: { password },
+    });
+  },
+};

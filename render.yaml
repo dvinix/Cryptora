@@ -1,0 +1,42 @@
+services:
+  # Cryptora FastAPI Backend
+  - type: web
+    name: cryptora-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cryptora-db
+          property: connectionString
+      - key: API_V1_PREFIX
+        value: /api/v1
+      - key: PROJECT_NAME
+        value: Cryptora
+      - key: VERSION
+        value: 1.0.0
+      - key: CORS_ORIGINS
+        value: "*" # Replace with your production Vercel frontend URL (e.g., https://cryptora.vercel.app)
+      - key: CORS_ALLOW_CREDENTIALS
+        value: "false"
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: JWT_EXPIRATION_HOURS
+        value: "24"
+      - key: RATE_LIMIT_ENABLED
+        value: "true"
+      - key: RATE_LIMIT_PER_MINUTE
+        value: "60"
+
+# Managed PostgreSQL Database
+databases:
+  - name: cryptora-db
+    databaseName: cryptora_db
+    user: cryptora_user
+    plan: free # Change to standard/starter as needed

@@ -1,0 +1,35 @@
+# Render ignore file
+# Files to exclude from deployment
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tests
+tests/
+*.test.py
+
+# Environment
+.env
+.env.local

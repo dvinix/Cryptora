@@ -1,0 +1,127 @@
+{
+    "taskDefinitionArn":  "arn:aws:ecs:ap-south-1:591164066792:task-definition/cryptora-backend:2",
+    "containerDefinitions":  [
+                                 {
+                                     "name":  "backend",
+                                     "image":  "591164066792.dkr.ecr.ap-south-1.amazonaws.com/cryptora-backend:latest",
+                                     "cpu":  0,
+                                     "portMappings":  [
+                                                          {
+                                                              "containerPort":  8000,
+                                                              "hostPort":  8000,
+                                                              "protocol":  "tcp",
+                                                              "name":  "backend-8000-tcp",
+                                                              "appProtocol":  "http"
+                                                          }
+                                                      ],
+                                     "essential":  true,
+                                     "environment":  [
+                                                         {
+                                                             "name":  "DATABASE_URL",
+                                                             "value":  "postgresql://postgres:rootselmon@cryptora-db.cn46igkcorl9.ap-south-1.rds.amazonaws.com:5432/cryptora"
+                                                         },
+                                                         {
+                                                             "name":  "CORS_ORIGINS",
+                                                             "value":  "https://cryptora.dvinix.dev"
+                                                         },
+                                                         {
+                                                             "name":  "JWT_ALGORITHM",
+                                                             "value":  "HS256"
+                                                         },
+                                                         {
+                                                             "name":  "JWT_SECRET_KEY",
+                                                             "value":  "KxQ8mN2pL9vR5yF7jH3tW6cA1sD4fG8hJ9kL0zX2cV3bN7mQ=="
+                                                         },
+                                                         {
+                                                             "name":  "JWT_EXPIRATION_HOURS",
+                                                             "value":  "24"
+                                                         }
+                                                     ],
+                                     "environmentFiles":  [
+
+                                                          ],
+                                     "mountPoints":  [
+
+                                                     ],
+                                     "volumesFrom":  [
+
+                                                     ],
+                                     "ulimits":  [
+
+                                                 ],
+                                     "logConfiguration":  {
+                                                              "logDriver":  "awslogs",
+                                                              "options":  {
+                                                                              "awslogs-group":  "/ecs/cryptora-backend",
+                                                                              "awslogs-create-group":  "true",
+                                                                              "awslogs-region":  "ap-south-1",
+                                                                              "awslogs-stream-prefix":  "ecs"
+                                                                          },
+                                                              "secretOptions":  [
+
+                                                                                ]
+                                                          },
+                                     "systemControls":  [
+
+                                                        ]
+                                 }
+                             ],
+    "family":  "cryptora-backend",
+    "taskRoleArn":  "arn:aws:iam::591164066792:role/cryptora-ecs-task-role",
+    "executionRoleArn":  "arn:aws:iam::591164066792:role/ecsTaskExecutionRole",
+    "networkMode":  "awsvpc",
+    "revision":  2,
+    "volumes":  [
+
+                ],
+    "status":  "ACTIVE",
+    "requiresAttributes":  [
+                               {
+                                   "name":  "com.amazonaws.ecs.capability.logging-driver.awslogs"
+                               },
+                               {
+                                   "name":  "ecs.capability.execution-role-awslogs"
+                               },
+                               {
+                                   "name":  "com.amazonaws.ecs.capability.ecr-auth"
+                               },
+                               {
+                                   "name":  "com.amazonaws.ecs.capability.docker-remote-api.1.19"
+                               },
+                               {
+                                   "name":  "com.amazonaws.ecs.capability.task-iam-role"
+                               },
+                               {
+                                   "name":  "ecs.capability.execution-role-ecr-pull"
+                               },
+                               {
+                                   "name":  "com.amazonaws.ecs.capability.docker-remote-api.1.18"
+                               },
+                               {
+                                   "name":  "ecs.capability.task-eni"
+                               },
+                               {
+                                   "name":  "com.amazonaws.ecs.capability.docker-remote-api.1.29"
+                               }
+                           ],
+    "placementConstraints":  [
+
+                             ],
+    "compatibilities":  [
+                            "EC2",
+                            "FARGATE",
+                            "MANAGED_INSTANCES"
+                        ],
+    "runtimePlatform":  {
+                            "cpuArchitecture":  "X86_64",
+                            "operatingSystemFamily":  "LINUX"
+                        },
+    "requiresCompatibilities":  [
+                                    "FARGATE"
+                                ],
+    "cpu":  "256",
+    "memory":  "512",
+    "registeredAt":  "2026-05-09T15:47:02.477000+05:30",
+    "registeredBy":  "arn:aws:iam::591164066792:root",
+    "enableFaultInjection":  false
+}
