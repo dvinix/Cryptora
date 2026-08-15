@@ -10,12 +10,18 @@ import type {
   UpdateNoteRequest,
 } from './types';
 
-const rawApiUrl = import.meta.env.VITE_API_URL ?? '';
-const API_BASE_URL = rawApiUrl.endsWith('/') ? rawApiUrl.slice(0, -1) : rawApiUrl;
+let rawApiUrl = (import.meta.env.VITE_API_URL ?? '').trim();
+if (rawApiUrl.endsWith('/')) {
+  rawApiUrl = rawApiUrl.slice(0, -1);
+}
+if (rawApiUrl.endsWith('/api/v1')) {
+  rawApiUrl = rawApiUrl.slice(0, -7);
+}
 const API_PREFIX = '/api/v1';
+const API_BASE_URL = rawApiUrl ? `${rawApiUrl}${API_PREFIX}` : API_PREFIX;
 
 const api = axios.create({
-  baseURL: API_BASE_URL ? `${API_BASE_URL}${API_PREFIX}` : API_PREFIX,
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
